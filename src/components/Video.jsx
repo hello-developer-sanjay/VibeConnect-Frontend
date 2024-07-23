@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 const VideoContainer = styled.div`
@@ -36,9 +36,27 @@ const StyledVideo = styled.video`
   }
 `;
 
+const ControlButton = styled.button`
+  padding: 0.5rem 1rem;
+  margin: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  background: linear-gradient(to right, #007bff, #00ff7f);
+  color: white;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    background: linear-gradient(to right, #0056b3, #00cc6a);
+    transform: scale(1.1);
+  }
+`;
+
 const Video = ({ localStream, remoteStream }) => {
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
+  const [isFrontCamera, setIsFrontCamera] = useState(true);
 
   useEffect(() => {
     if (localStream && localVideoRef.current) {
@@ -52,10 +70,38 @@ const Video = ({ localStream, remoteStream }) => {
     }
   }, [remoteStream]);
 
+  const toggleCamera = async () => {
+    const videoTracks = localStream.getVideoTracks();
+    if (videoTracks.length > 0) {
+      const currentTrack = videoTracks[0];
+      const constraints = currentTrack.getConstraints();
+      constraints.facingMode = isFrontCamera ? 'environment' : 'user';
+      await currentTrack.applyConstraints(constraints);
+      setIsFrontCamera(!isFrontCamera);
+    }
+  };
+
+  const enterFullScreen = (ref) => {
+    if (ref.current) {
+      if (ref.current.requestFullscreen) {
+        ref.current.requestFullscreen();
+      } else if (ref.current.mozRequestFullScreen) { // Firefox
+        ref.current.mozRequestFullScreen();
+      } else if (ref.current.webkitRequestFullscreen) { // Chrome, Safari and Opera
+        ref.current.webkitRequestFullscreen();
+      } else if (ref.current.msRequestFullscreen) { // IE/Edge
+        ref.current.msRequestFullscreen();
+      }
+    }
+  };
+
   return (
     <VideoContainer>
-      <StyledVideo ref={localVideoRef} autoPlay playsInline />
-      <StyledVideo ref={remoteVideoRef} autoPlay playsInline />
+      <StyledVideo ref={localVideoRef} autoPlay playsInline onClick={() => enterFullScreen(localVideoRef)} />
+      <StyledVideo ref={remoteVideoRef} autoPlay playsInline onClick={() => enterFullScreen(remoteVideoRef)} />
+      <ControlButton onClick={toggleCamera}>
+        Switch to {isFrontCamera ? 'Rear' : 'Front'} Camera
+      </ControlButton>
     </VideoContainer>
   );
 };
