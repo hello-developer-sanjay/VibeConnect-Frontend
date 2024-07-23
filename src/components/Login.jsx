@@ -17,7 +17,7 @@ const Login = ({ history }) => {
     };
 
     if (userInfo) {
-        history.push('/chat');
+        history.push('/');
     }
 
     return (
