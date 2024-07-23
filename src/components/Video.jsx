@@ -73,10 +73,18 @@ const Video = ({ localStream, remoteStream }) => {
   const toggleCamera = async () => {
     const videoTracks = localStream.getVideoTracks();
     if (videoTracks.length > 0) {
-      const currentTrack = videoTracks[0];
-      const constraints = currentTrack.getConstraints();
-      constraints.facingMode = isFrontCamera ? 'environment' : 'user';
-      await currentTrack.applyConstraints(constraints);
+      videoTracks[0].stop();
+      const constraints = {
+        video: {
+          facingMode: isFrontCamera ? 'environment' : 'user',
+        },
+        audio: true,
+      };
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      localStream.removeTrack(videoTracks[0]);
+      localStream.addTrack(newVideoTrack);
+      localVideoRef.current.srcObject = localStream;
       setIsFrontCamera(!isFrontCamera);
     }
   };
